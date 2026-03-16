@@ -15,12 +15,11 @@ If WiFi is your only network interface (no Ethernet), the Pi becomes unreachable
 
 ## Solution
 
-A systemd timer runs every 5 minutes and:
+A systemd timer runs every 5 minutes and pings the default gateway 3 times. If any ping succeeds, WiFi is healthy and nothing happens. If all 3 fail:
 
-1. **Pings the default gateway** 3 times to check connectivity
-2. **Reloads the brcmfmac kernel module** (`modprobe -r` / `modprobe`) and waits up to 30 seconds for NetworkManager to reconnect
-3. **Reboots as a last resort** if the module reload doesn't restore connectivity (the chip may need a full power cycle)
-4. **Reboot cooldown** — max 1 reboot per hour to prevent reboot loops
+1. **Reload the brcmfmac kernel module** (`modprobe -r` / `modprobe`) and wait up to 30 seconds for NetworkManager to reconnect
+2. **Reboot as a last resort** if the module reload doesn't restore connectivity (the chip may need a full power cycle)
+3. **Reboot cooldown** — max 1 reboot per hour to prevent reboot loops if hardware is permanently failed
 
 ## Install
 
