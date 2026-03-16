@@ -70,23 +70,18 @@ After editing, re-run `sudo ./install.sh install` to update the installed copy.
 
 ## How it works
 
-```
-Timer fires (every 5 min)
-  → ping -c 3 -W 2 <gateway>
-  │
-  ├─ Any ping succeeds → exit (WiFi is fine)
-  │
-  └─ All 3 fail
-       → modprobe -r brcmfmac_cyw brcmfmac brcmutil
-       → sleep 2s
-       → modprobe brcmfmac
-       → poll gateway every 5s for 30s
-       │
-       ├─ Recovered → done
-       │
-       └─ Still dead → check reboot cooldown
-            ├─ OK → reboot
-            └─ Too soon → log error, wait for next cycle
+```mermaid
+flowchart TD
+    A[Timer fires every 5 min] --> B{ping -c 3 -W 2 gateway}
+    B -->|Any ping succeeds| C[WiFi is healthy ✓]
+    B -->|All 3 fail| D[Unload brcmfmac modules]
+    D --> E[Sleep 2s]
+    E --> F[Reload brcmfmac]
+    F --> G{Poll gateway every 5s\nfor up to 30s}
+    G -->|Ping succeeds| H[Recovered ✓]
+    G -->|Still dead after 30s| I{Last reboot\n< 1 hour ago?}
+    I -->|No| J[Reboot system]
+    I -->|Yes| K[Log error, wait\nfor next cycle]
 ```
 
 ## Logs
