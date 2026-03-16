@@ -5,8 +5,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
-    echo "Usage: sudo $0 {install|uninstall|status}"
-    exit 1
+    echo "Usage: $0 {install|uninstall|status}"
+    echo ""
+    echo "  install    Install and enable the wifi-watchdog service (requires sudo)"
+    echo "  uninstall  Remove the service and all files (requires sudo)"
+    echo "  status     Show timer status and recent logs"
+    exit 0
 }
 
 check_root() {
@@ -17,7 +21,6 @@ check_root() {
 }
 
 do_install() {
-    check_root
     echo "Installing wifi-watchdog..."
 
     install -Dm755 "$SCRIPT_DIR/wifi-watchdog.sh"      /usr/local/bin/wifi-watchdog.sh
@@ -34,7 +37,6 @@ do_install() {
 }
 
 do_uninstall() {
-    check_root
     echo "Uninstalling wifi-watchdog..."
 
     systemctl disable --now wifi-watchdog.timer  2>/dev/null || true
@@ -57,19 +59,14 @@ do_status() {
     echo "=== Recent logs ==="
     journalctl -u wifi-watchdog --no-pager -n 10 2>/dev/null || echo "(no logs yet)"
     echo ""
-    if [[ -f /run/wifi-watchdog/fail_count ]]; then
-        echo "Failure counter: $(cat /run/wifi-watchdog/fail_count)"
-    else
-        echo "Failure counter: 0 (no state file)"
-    fi
     if [[ -f /run/wifi-watchdog/manual_disable ]]; then
         echo "⚠ Watchdog is MANUALLY DISABLED (touch /run/wifi-watchdog/manual_disable)"
     fi
 }
 
 case "${1:-}" in
-    install)   do_install   ;;
-    uninstall) do_uninstall ;;
+    install)   check_root; do_install   ;;
+    uninstall) check_root; do_uninstall ;;
     status)    do_status    ;;
     *)         usage        ;;
 esac
