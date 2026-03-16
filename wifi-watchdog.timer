@@ -3,8 +3,8 @@ Description=WiFi Connectivity Watchdog Timer
 After=network-online.target
 
 [Timer]
-OnBootSec=2min
-OnUnitActiveSec=2min
+OnBootSec=5min
+OnUnitActiveSec=5min
 Unit=wifi-watchdog.service
 Persistent=true
 

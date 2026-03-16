@@ -15,18 +15,17 @@ If WiFi is your only network interface (no Ethernet), the Pi becomes unreachable
 
 ## Solution
 
-A systemd timer runs every 2 minutes and:
+A systemd timer runs every 5 minutes and:
 
-1. **Pings the default gateway** to check connectivity
-2. **Tracks consecutive failures** — 3 required before taking action (~6 minutes of downtime), to avoid false positives from brief router hiccups
-3. **Reloads the brcmfmac kernel module** (`modprobe -r` / `modprobe`) and waits up to 30 seconds for NetworkManager to reconnect
-4. **Reboots as a last resort** if the module reload doesn't restore connectivity (the chip may need a full power cycle)
-5. **Reboot cooldown** — max 1 reboot per hour to prevent reboot loops if the hardware is permanently failed
+1. **Pings the default gateway** 3 times to check connectivity
+2. **Reloads the brcmfmac kernel module** (`modprobe -r` / `modprobe`) and waits up to 30 seconds for NetworkManager to reconnect
+3. **Reboots as a last resort** if the module reload doesn't restore connectivity (the chip may need a full power cycle)
+4. **Reboot cooldown** — max 1 reboot per hour to prevent reboot loops
 
 ## Install
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/assapir/wifi-watchdog.git
 cd wifi-watchdog
 sudo ./install.sh install
 ```
@@ -66,9 +65,6 @@ Edit the variables at the top of `wifi-watchdog.sh`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MAX_FAILURES` | `3` | Consecutive ping failures before recovery action |
-| `PING_TIMEOUT` | `2` | Seconds to wait for ping reply |
-| `RELOAD_WAIT` | `30` | Seconds to wait for reconnection after module reload |
 | `REBOOT_COOLDOWN` | `3600` | Minimum seconds between watchdog-triggered reboots |
 
 After editing, re-run `sudo ./install.sh install` to update the installed copy.
@@ -76,33 +72,25 @@ After editing, re-run `sudo ./install.sh install` to update the installed copy.
 ## How it works
 
 ```
-Timer fires (every 2 min)
-  → Detect gateway (ip route)
-  → Ping gateway
+Timer fires (every 5 min)
+  → ping -c 3 -W 2 <gateway>
   │
-  ├─ Success → reset counter, exit
+  ├─ Any ping succeeds → exit (WiFi is fine)
   │
-  └─ Fail → increment counter
+  └─ All 3 fail
+       → modprobe -r brcmfmac_cyw brcmfmac brcmutil
+       → sleep 2s
+       → modprobe brcmfmac
+       → poll gateway every 5s for 30s
        │
-       ├─ Counter < 3 → log warning, exit (wait for next check)
+       ├─ Recovered → done
        │
-       └─ Counter = 3
-            → modprobe -r brcmfmac_cyw brcmfmac brcmutil
-            → sleep 2s
-            → modprobe brcmfmac
-            → poll gateway every 5s for 30s
-            │
-            ├─ Recovered → reset counter, done
-            │
-            └─ Still dead → check reboot cooldown
-                 │
-                 ├─ Cooldown OK → reboot
-                 └─ Cooldown active → log error, wait
+       └─ Still dead → check reboot cooldown
+            ├─ OK → reboot
+            └─ Too soon → log error, wait for next cycle
 ```
 
 ## Logs
-
-All output goes to journald:
 
 ```bash
 # Follow live
