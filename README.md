@@ -39,7 +39,7 @@ sudo ./install.sh uninstall
 ## Status
 
 ```bash
-sudo ./install.sh status
+./install.sh status
 # or
 systemctl list-timers wifi-watchdog.timer
 journalctl -u wifi-watchdog -f
@@ -113,4 +113,4 @@ journalctl -u wifi-watchdog -p warning
 
 ## License
 
-MIT
+GPL-2.0
