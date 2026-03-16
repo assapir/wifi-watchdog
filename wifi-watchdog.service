@@ -1,0 +1,21 @@
+[Unit]
+Description=WiFi Connectivity Watchdog
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=/usr/local/bin/wifi-watchdog.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=wifi-watchdog
+
+# Security hardening
+ProtectKernelModules=no
+ProtectKernelTunables=yes
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

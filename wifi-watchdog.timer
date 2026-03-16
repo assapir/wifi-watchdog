@@ -1,0 +1,12 @@
+[Unit]
+Description=WiFi Connectivity Watchdog Timer
+After=network-online.target
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+Unit=wifi-watchdog.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target
