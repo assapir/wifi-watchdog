@@ -35,8 +35,8 @@ reload_modules() {
         return 1
     fi
 
-    log_info "Waiting up to 30s for reconnection..."
-    for i in $(seq 1 6); do
+    log_info "Waiting up to 45s for reconnection..."
+    for i in $(seq 1 9); do
         sleep 5
         if check_connectivity; then
             log_info "Connectivity restored after $((i * 5))s"
@@ -78,6 +78,12 @@ log_warn "WiFi is down — attempting module reload"
 if reload_modules; then
     log_info "=== RECOVERED via module reload ==="
 else
-    log_error "=== Module reload failed — rebooting ==="
-    safe_reboot
+    log_warn "Reload loop timed out — doing final connectivity check before reboot..."
+    sleep 5
+    if check_connectivity; then
+        log_info "=== RECOVERED (late reconnect) ==="
+    else
+        log_error "=== Module reload failed — rebooting ==="
+        safe_reboot
+    fi
 fi
